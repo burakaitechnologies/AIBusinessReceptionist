@@ -1,0 +1,124 @@
+{
+  "name": "AIBusinessReceptionist",
+  "nodes": [
+    {
+      "parameters": {
+        "resume": "specificTime",
+        "dateTime": "={{ \n  (() => {\n    const submitted = new Date($json.submittedAt);\n    let next = new Date(submitted);\n    next.setDate(submitted.getDate() + 1);\n\n    // Skip weekends\n    while ([0, 6].includes(next.getDay())) {\n      next.setDate(next.getDate() + 1);\n    }\n\n    // Set to 2 PM local time (UTC-5)\n    next.setUTCHours(19, 0, 0, 0); // 14:00 local = 19:00 UTC\n\n    // Format as local-time style (without timezone)\n    const local = new Date(next.getTime() - 5 * 60 * 60 * 1000); // shift back 5h\n    return local.toISOString().split('.')[0];\n  })()\n}}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        -16
+      ],
+      "id": "dcef653f-ba4a-45c0-abe1-e6ce72d57844",
+      "name": "Wait Till Next Business Day",
+      "webhookId": "9c594067-5b7d-4d58-b8da-e4f98d3ede21"
+    },
+    {
+      "parameters": {
+        "formTitle": "Service Discovery Call",
+        "formDescription": "It's a service call - we’d love to understand your needs and how we can help.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "What is your first name?",
+              "placeholder": "Damian Dan",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "What is the best phone number to reach you?",
+              "placeholder": "xxxxxxx",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Please enter your email address.",
+              "placeholder": "damiandanxx@gmail.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Which service are you most interested in?",
+              "placeholder": "Intrested in AI Agents and automation services",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f7ac1046-3d4a-4d96-9bee-96a274ede38a",
+      "name": "Customer Form Submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -176,
+        -16
+      ],
+      "webhookId": "25303682-10e5-4758-bde8-a46c17c02363"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.retellai.com/v2/create-phone-call",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from_number\": \"ENTER_A_NUMBER\",\n  \"to_number\": \"{{ $('Customer Form Submission').item.json['What is the best phone number to reach you?'] }}\",\n  \"override_agent_id\": \"agent_d43d84fc83772a5c0fd43349d5\",\n  \"metadata\": {},\n  \"retell_llm_dynamic_variables\": {\n    \"first_name\": \"{{ $('Customer Form Submission').item.json['What is your first name?'] }}\",\n    \"email\": \"{{ $('Customer Form Submission').item.json['Please enter your email address.'] }}\",\n    \"service\": \"{{ $('Customer Form Submission').item.json['Which service are you most interested in?'] }}\"\n  },\n  \"custom_sip_headers\": {\n    \"X-Custom-Header\": \"Custom Value\"\n  },\n  \"ignore_e164_validation\": true\n}",
+        "options": {}
+      },
+      "id": "99b3bb43-ae82-47da-a42c-4a7b66adb151",
+      "name": "Retell Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        -16
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Wait Till Next Business Day": {
+      "main": [
+        [
+          {
+            "node": "Retell Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Form Submission": {
+      "main": [
+        [
+          {
+            "node": "Wait Till Next Business Day",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Chicago",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "5a4dfd95-8241-452b-936b-233b5f47f95f",
+  "meta": {
+    "instanceId": "4a2952d750233c02800975f682ffd82d00294fb62c8e98c152bd79f86550ccf2"
+  },
+  "id": "SL34F81Iotivtze0",
+  "tags": []
+}
